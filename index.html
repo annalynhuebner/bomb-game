@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lesson 4.2 - Don't Look at the Bomb</title>
+    <!-- A-Frame VR Library -->
+    <script src="https://aframe.io/releases/1.0.0/aframe.min.js"></script>
+</head>
+<body>
+    <a-scene>
+        <!-- Background Sky and Floor Plane -->
+        <a-sky id="sky" color="#222233"></a-sky>
+        <a-plane position="0 0 0" rotation="-90 0 0" width="30" height="30" color="#111122"></a-plane>
+
+        <!-- Camera Viewpoint with Fusing Gaze Cursor (1 Second Fuse Timeout) -->
+        <a-camera position="0 1.6 0">
+            <a-cursor fuse="true" fuse-timeout="1000" color="#ffffff"></a-cursor>
+
+            <!-- 3D Text HUD Attached to View -->
+            <a-text id="score-text" value="Score: 0" position="-1 0.8 -1" color="#00ff00" width="3"></a-text>
+            <a-text id="status-text" value="Gaze at gems. Avoid the Bomb!" position="0 1 -1" align="center" color="#ffff00" width="2.5"></a-text>
+        </a-camera>
+
+        <!-- 4 Safe Colored Objects positioned in 360 Space -->
+        <a-sphere class="safe" position="0 1.5 -3" radius="0.4" color="#00e5ff"></a-sphere>
+        <a-box class="safe" position="3 1.5 0" width="0.7" height="0.7" depth="0.7" color="#2ecc71"></a-box>
+        <a-octahedron class="safe" position="0 1.5 3" radius="0.5" color="#ff00cc"></a-octahedron>
+        <a-dodecahedron class="safe" position="-3 1.5 0" radius="0.5" color="#f1c40f"></a-dodecahedron>
+
+        <!-- 1 Hazardous Bomb Object -->
+        <a-sphere id="bomb" position="2 1.5 -2" radius="0.5" color="#ff0000"></a-sphere>
+    </a-scene>
+
+    <script>
+        let score = 0;
+        let isGameOver = false;
+
+        // Get DOM Elements
+        const scoreText = document.querySelector("#score-text");
+        const statusText = document.querySelector("#status-text");
+        const sky = document.querySelector("#sky");
+        const bomb = document.querySelector("#bomb");
+        const safeItems = document.querySelectorAll(".safe");
+
+        // Function to generate a random 360-degree position around the player
+        function getRandomPosition() {
+            let x = (Math.random() * 8 - 4).toFixed(1);
+            let y = (1 + Math.random() * 1.5).toFixed(1);
+            let z = (Math.random() * 8 - 4).toFixed(1);
+
+            // Prevent spawning directly inside the player
+            if (Math.abs(x) < 1.5 && Math.abs(z) < 1.5) {
+                z = -2.5;
+            }
+            return x + " " + y + " " + z;
+        }
+
+        // Gaze Interaction for Safe Items (+1 Score & Relocate)
+        safeItems.forEach(function(item) {
+            item.addEventListener("click", function() {
+                if (isGameOver) return;
+
+                score++;
+                scoreText.setAttribute("value", "Score: " + score);
+                item.setAttribute("position", getRandomPosition());
+            });
+        });
+
+        // Gaze Interaction for the Bomb (Game Over)
+        bomb.addEventListener("click", function() {
+            if (isGameOver) return;
+
+            isGameOver = true;
+            statusText.setAttribute("value", "GAME OVER!");
+            statusText.setAttribute("color", "#ff0000");
+            sky.setAttribute("color", "#ff0000");
+            bomb.setAttribute("visible", "false");
+        });
+
+        // Randomly move the bomb and one safe object every 3 seconds
+        setInterval(function() {
+            if (isGameOver) return;
+
+            // Move bomb
+            bomb.setAttribute("position", getRandomPosition());
+
+            // Move one random safe object
+            let randomIndex = Math.floor(Math.random() * safeItems.length);
+            safeItems[randomIndex].setAttribute("position", getRandomPosition());
+        }, 3000);
+    </script>
+</body>
+</html>
